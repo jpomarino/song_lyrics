@@ -1,5 +1,11 @@
 pandas
+numpy
 python-dotenv
 requests
 lyricsgenius
 tqdm
+matplotlib
+spacy
+sentence-transformers
+umap-learn
+plotly

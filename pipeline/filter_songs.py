@@ -100,14 +100,25 @@ def filter_short_songs(df: pd.DataFrame, min_words: int = 30) -> pd.DataFrame:
     return df
 
 
-df = pd.read_json("../data/raw/lyrics_raw.json")
-df = filter_songs_by_title(df)
-df = filter_songs_manually(df)
-df = df[~df.duplicated(subset=["artist", "title"])]
-df = filter_short_songs(df)
-df = df.reset_index(drop=True)
+def filter_songs(df: pd.DataFrame) -> pd.DataFrame:
+    df = filter_songs_by_title(df)
+    df = filter_songs_manually(df)
+    df = df[~df.duplicated(subset=["artist", "title"])]
+    df = filter_short_songs(df)
+    df = df.reset_index(drop=True)
 
-print(f"Saving a total of {len(df)} songs.")
+    return df
 
-# Save records as a JSON file
-df.to_json("../data/processed/filtered_songs.json", indent=4, orient="records")
+
+def main():
+    df = pd.read_json("../data/raw/lyrics_raw.json")
+    df = filter_songs(df)
+
+    print(f"Saving a total of {len(df)} songs.")
+
+    # Save records as a JSON file
+    df.to_json("../data/processed/filtered_songs.json", indent=4, orient="records")
+
+
+if __name__ == "__main__":
+    main()

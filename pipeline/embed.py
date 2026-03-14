@@ -65,21 +65,32 @@ def embed_song(
     return averaged
 
 
-def main():
+def load_model(model_name: str = MODEL_NAME) -> SentenceTransformer:
+    print("Loading embedding model.")
+    return SentenceTransformer(model_name)
 
-    # Import the json file with all the songs
-    df = pd.read_json("../data/processed/preprocessed_songs.json")
 
-    # Instatiate the sentence transformer model
-    model = SentenceTransformer(MODEL_NAME)
+def embed_dataset(df: pd.DataFrame) -> np.array:
+    # Load embedding model
+    model = load_model()
 
     # Empty numpy array to store the embeddings
     embeddings = np.zeros((len(df), EMBEDDING_DIM), dtype=np.float32)
 
-    # Storing the song embeddings
-    print("Embedding song lyrics!")
+    # Embed every song
     for i, lyrics in enumerate(tqdm(df["preprocessed_lyrics"], desc="Embedding")):
         embeddings[i] = embed_song(lyrics, model)
+
+    return embeddings
+
+
+def main():
+
+    # Import the json file with all the songs
+    df = pd.read_json("../data/processed/final_songs.json")
+
+    # Embed the dataset
+    embeddings = embed_dataset(df)
 
     # Save embeddings as an npy file
     np.save("../data/cache/llm_embedding.npy", embeddings)

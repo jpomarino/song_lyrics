@@ -1,5 +1,4 @@
 import pandas as pd
-import json
 
 
 def filter_songs_by_title(df: pd.DataFrame) -> pd.DataFrame:

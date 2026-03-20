@@ -1,3 +1,1 @@
-from analysis.similarity import (
-    get_similar_songs
-)
+from analysis.similarity import get_similar_songs, get_artist_similarity_matrix

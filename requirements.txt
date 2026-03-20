@@ -11,3 +11,4 @@ umap-learn
 plotly
 scikit-learn
 streamlit
+bertopic

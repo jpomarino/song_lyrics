@@ -35,8 +35,54 @@ def get_similar_songs(
     return results
 
 
-def get_artist_similarit_matrix():
-    pass
+# ─────────────────────────────────────────────────────────────────────────────
+# ARTIST-LEVEL SIMILARITY
+# ─────────────────────────────────────────────────────────────────────────────
+def get_artist_similarity_matrix(
+    df: pd.DataFrame, embeddings: np.ndarray, method: str = "centroid"
+) -> pd.DataFrame:
+    artists = sorted(df["artist"].unique())
+    n = len(artists)
+    matrix = np.zeros((n, n))
+
+    if method == "centroid":
+        # Compute one mean vector per artist
+        centroids = {}
+        for artist in artists:
+            idx = df[df["artist"] == artist].index.tolist()
+            vecs = embeddings[idx]
+            centroid = vecs.mean(axis=0)
+            # Re-normalize the centroid
+            # norm = np.linalg.norm(centroid)
+            centroids[artist] = centroid  # / norm if norm > 0 else centroid
+
+        centroid_matrix = np.vstack([centroids[a] for a in artists])
+        sim = cosine_similarity(centroid_matrix)
+        matrix = sim
+
+    elif method == "average":
+        # Average all pairwise song similarities between each artist pair
+        artist_indices = {
+            artist: df[df["artist"] == artist].index.tolist() for artist in artists
+        }
+        for i, a1 in enumerate(artists):
+            for j, a2 in enumerate(artists):
+                if i == j:
+                    matrix[i, j] = 1.0
+                    continue
+                if j < i:
+                    # Mirror — already computed
+                    matrix[i, j] = matrix[j, i]
+                    continue
+                vecs_a = embeddings[artist_indices[a1]]
+                vecs_b = embeddings[artist_indices[a2]]
+                sim = cosine_similarity(vecs_a, vecs_b).mean()
+                matrix[i, j] = sim
+                matrix[j, i] = sim
+    else:
+        raise ValueError(f"method must be 'centroid' or 'average', got '{method}'")
+
+    return pd.DataFrame(matrix, index=artists, columns=artists).round(4)
 
 
 def get_song_similarity_matrix():

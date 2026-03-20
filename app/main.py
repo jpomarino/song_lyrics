@@ -12,7 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from sentence_transformers import SentenceTransformer
-from analysis.similarity import get_similar_songs
+from analysis.similarity import get_similar_songs, get_artist_similarity_matrix
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -105,6 +105,16 @@ def load_embed_model() -> SentenceTransformer:
     return SentenceTransformer("all-MiniLM-L6-v2")
 
 
+@st.cache_data(show_spinner="Computing artist similarity matrix...")
+def load_artist_similarity(_df, _embeddings):
+    """
+    Compute and cache the artist similarity matrix.
+    Underscored args tell Streamlit not to hash the numpy/pandas objects
+    (hashing large arrays is slow) — acceptable here since data is static.
+    """
+    return get_artist_similarity_matrix(_df, _embeddings, method="centroid")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # BOOTSTRAP SESSION STATE
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,7 +134,7 @@ def bootstrap():
         model = load_embed_model()
         # topic_model = load_topics()
 
-        # artist_sim_matrix = load_artist_similarity(df, embeddings)
+        artist_sim_matrix = load_artist_similarity(df, embeddings)
         # similarity_stats  = load_similarity_stats(df, embeddings)
 
         # topic_summary = (
@@ -140,7 +150,7 @@ def bootstrap():
             "umap_2d": umap_2d,
             "embed_model": model,
             # "topic_model":        topic_model,
-            # "artist_sim_matrix":  artist_sim_matrix,
+            "artist_sim_matrix": artist_sim_matrix,
             # "similarity_stats":   similarity_stats,
             # "topic_summary":      topic_summary,
         }
@@ -191,7 +201,7 @@ def render_overview():
     df = st.session_state["df"]
     embeddings = st.session_state["embeddings"]
     # similarity_stats = st.session_state["similarity_stats"]
-    # artist_sim_matrix = st.session_state["artist_sim_matrix"]
+    artist_sim_matrix = st.session_state["artist_sim_matrix"]
     # topic_summary    = st.session_state["topic_summary"]
 
     st.title("🎵 Lyrics Analysis — Overview")
@@ -237,27 +247,27 @@ def render_overview():
     st.markdown("---")
 
     # ── Artist similarity heatmap ─────────────────────────────────────────
-    # st.subheader("Artist Similarity Heatmap")
-    # st.caption(
-    #    "Cosine similarity between artist centroids in embedding space. "
-    #    "Higher values indicate more similar lyrical style and themes."
-    # )
-    # fig_heat = px.imshow(
-    #    artist_sim_matrix,
-    #    color_continuous_scale="RdBu",
-    #    zmin=0,
-    #    zmax=1,
-    #    aspect="auto",
-    #    template="plotly_dark",
-    #    labels=dict(color="Similarity"),
-    # )
-    # fig_heat.update_layout(height=500, margin=dict(t=20, b=20, l=20, r=20))
-    # fig_heat.update_traces(
-    #    hovertemplate="<b>%{x}</b> vs <b>%{y}</b><br>Similarity: %{z:.3f}<extra></extra>"
-    # )
-    # st.plotly_chart(fig_heat, use_container_width=True)
+    st.subheader("Artist Similarity Heatmap")
+    st.caption(
+        "Cosine similarity between artist centroids in embedding space. "
+        "Higher values indicate more similar lyrical style and themes."
+    )
+    fig_heat = px.imshow(
+        artist_sim_matrix,
+        color_continuous_scale="RdBu",
+        zmin=0,
+        zmax=1,
+        aspect="auto",
+        template="plotly_dark",
+        labels=dict(color="Similarity"),
+    )
+    fig_heat.update_layout(height=500, margin=dict(t=20, b=20, l=20, r=20))
+    fig_heat.update_traces(
+        hovertemplate="<b>%{x}</b> vs <b>%{y}</b><br>Similarity: %{z:.3f}<extra></extra>"
+    )
+    st.plotly_chart(fig_heat, use_container_width=True)
 
-    # st.markdown("---")
+    st.markdown("---")
 
     # ── Distinctiveness table ─────────────────────────────────────────────
     # col_a, col_b = st.columns([1, 1])
@@ -309,18 +319,48 @@ def render_overview():
 
     # ── Corpus breakdown table ────────────────────────────────────────────
     st.subheader("Corpus Breakdown")
+
+    # Build one thumbnail URL per artist (take the first non-null value)
+    thumbnails = (
+        df.groupby("artist")["artist_thumbnail_url"]
+        .first()
+        .reset_index()
+        .rename(columns={"artist_thumbnail_url": "thumbnail"})
+    )
+
     breakdown = (
         df.groupby("artist")
         .agg(
             songs=("title", "count"),
             albums=("album", lambda x: x.nunique()),
-            # avg_lyric_length=("lyrics_for_llm", lambda x: int(x.str.split().str.len().mean())),
+            avg_lyric_length=(
+                "preprocessed_lyrics",
+                lambda x: int(x.str.split().str.len().mean()),
+            ),
         )
         .reset_index()
         .sort_values("songs", ascending=False)
+        .merge(thumbnails, on="artist", how="left")
     )
-    breakdown.columns = ["Artist", "Songs", "Albums"]  # , "Avg Words / Song"]
-    st.dataframe(breakdown, use_container_width=True, hide_index=True)
+
+    # Reorder so thumbnail is the first column
+    breakdown = breakdown[
+        ["thumbnail", "artist", "songs", "albums", "avg_lyric_length"]
+    ]
+    breakdown.columns = ["", "Artist", "Songs", "Albums", "Avg Words / Song"]
+
+    st.dataframe(
+        breakdown,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "": st.column_config.ImageColumn(
+                label="",
+                width="small",  # renders as a medium square thumbnail
+                help="Artist photo from Genius",
+            ),
+        },
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

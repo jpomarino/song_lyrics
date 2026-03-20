@@ -78,6 +78,7 @@ def filter_songs_manually(df: pd.DataFrame) -> pd.DataFrame:
 
     # 19. Kacey Musgraves
     df = df[~df["title"].str.contains(r"gracias|feliz", case=False)]
+    df = df[~df["album"].str.contains(r"Christmas", case=False)]
 
     # 20. Ariana Grande
     df = df[df["album"] != "Ariana Grande"]

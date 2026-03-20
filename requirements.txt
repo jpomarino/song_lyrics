@@ -9,3 +9,5 @@ spacy
 sentence-transformers
 umap-learn
 plotly
+scikit-learn
+streamlit

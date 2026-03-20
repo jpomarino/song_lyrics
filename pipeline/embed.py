@@ -84,6 +84,14 @@ def embed_dataset(df: pd.DataFrame) -> np.array:
     return embeddings
 
 
+def embed_query(text: str, model: SentenceTransformer) -> np.ndarray:
+
+    # TODO: make a try/except to check the text doesn't exceed the number of input tokens
+    query_embedding = model.encode(text, convert_to_numpy=True)
+
+    return query_embedding
+
+
 def main():
 
     # Import the json file with all the songs

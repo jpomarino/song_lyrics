@@ -12,7 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from sentence_transformers import SentenceTransformer
-from analysis.similarity import get_similar_songs, get_artist_similarity_matrix
+from analysis.similarity import get_artist_similarity_matrix, get_similarity_stats
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -115,6 +115,11 @@ def load_artist_similarity(_df, _embeddings):
     return get_artist_similarity_matrix(_df, _embeddings, method="centroid")
 
 
+@st.cache_data(show_spinner="Computing similarity stats...")
+def load_similarity_stats(_df, _embeddings):
+    return get_similarity_stats(_df, _embeddings)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # BOOTSTRAP SESSION STATE
 # ─────────────────────────────────────────────────────────────────────────────
@@ -135,7 +140,7 @@ def bootstrap():
         # topic_model = load_topics()
 
         artist_sim_matrix = load_artist_similarity(df, embeddings)
-        # similarity_stats  = load_similarity_stats(df, embeddings)
+        similarity_stats = load_similarity_stats(df, embeddings)
 
         # topic_summary = (
         #    get_topic_summary(topic_model)
@@ -151,7 +156,7 @@ def bootstrap():
             "embed_model": model,
             # "topic_model":        topic_model,
             "artist_sim_matrix": artist_sim_matrix,
-            # "similarity_stats":   similarity_stats,
+            "similarity_stats": similarity_stats,
             # "topic_summary":      topic_summary,
         }
     )
@@ -200,7 +205,7 @@ def render_sidebar():
 def render_overview():
     df = st.session_state["df"]
     embeddings = st.session_state["embeddings"]
-    # similarity_stats = st.session_state["similarity_stats"]
+    similarity_stats = st.session_state["similarity_stats"]
     artist_sim_matrix = st.session_state["artist_sim_matrix"]
     # topic_summary    = st.session_state["topic_summary"]
 
@@ -270,21 +275,21 @@ def render_overview():
     st.markdown("---")
 
     # ── Distinctiveness table ─────────────────────────────────────────────
-    # col_a, col_b = st.columns([1, 1])
+    col_a, col_b = st.columns([1, 1])
 
-    # with col_a:
-    #    st.subheader("Artist Distinctiveness")
-    #    st.caption(
-    #        "Intra-artist similarity minus inter-artist similarity. "
-    #        "Higher = more stylistically cohesive and unique."
-    #    )
-    #    st.dataframe(
-    #        similarity_stats.style.background_gradient(
-    #            subset=["distinctiveness"], cmap="RdYlGn"
-    #        ),
-    #        use_container_width=True,
-    #        height=380,
-    #    )
+    with col_a:
+        st.subheader("Artist Distinctiveness")
+        st.caption(
+            "Intra-artist similarity minus inter-artist similarity. "
+            "Higher = more stylistically cohesive and unique."
+        )
+        st.dataframe(
+            similarity_stats.style.background_gradient(
+                subset=["distinctiveness"], cmap="RdYlGn"
+            ),
+            use_container_width=True,
+            height=380,
+        )
 
     # ── Top topics ────────────────────────────────────────────────────────
     # with col_b:

@@ -217,6 +217,8 @@ def get_similarity_stats(df: pd.DataFrame, embeddings: np.ndarray) -> pd.DataFra
             }
         )
 
-    return pd.DataFrame(
-        rows.sort_values("distinctiveness", ascending=False).reset_index(drop=True)
+    return (
+        pd.DataFrame(rows)
+        .sort_values("distinctiveness", ascending=False)
+        .reset_index(drop=True)
     )

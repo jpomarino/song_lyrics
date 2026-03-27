@@ -7,7 +7,7 @@ import json
 from tqdm import tqdm
 
 # Get the Genius API key from the .env file
-BASE_DIR = Path("getting_data.ipynb").resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 genius_api_key = os.getenv("GENIUS_CLIENT_ACCESS_TOKEN")

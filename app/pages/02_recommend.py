@@ -41,7 +41,7 @@ embed_model = st.session_state["embed_model"]
 
 def embed_query(text: str) -> np.ndarray:
     """Embed a single query string using a shared model."""
-    vec = embed_model.encode([text], convert_to_numpy=True, normalize_emgeddings=True)[
+    vec = embed_model.encode([text], convert_to_numpy=True, normalize_embeddings=True)[
         0
     ]
     return vec
@@ -113,3 +113,61 @@ search_clicked = st.button(
 # ─────────────────────────────────────────────────────────────────────────────
 # SEARCH
 # ─────────────────────────────────────────────────────────────────────────────
+
+if search_clicked and query_input.strip():
+    cleaned_query = clean_query(query_input.strip())
+
+    search_df = df.copy()
+    search_embeddings = embeddings.copy()
+
+    # Optionally restrict to a subset of artists
+    if filter_artists:
+        mask = df["artist"].isin(filter_artists)
+        search_df = df[mask].reset_index(drop=True)
+        search_embeddings = embeddings[df[mask].index]
+
+    with st.spinner("Embedding query and searching . . . "):
+        query_vec = embed_query(cleaned_query)
+        results = get_similar_songs(
+            query_vec=query_vec, embeddings=search_embeddings, df=search_df, top_n=top_n
+        )
+
+    st.markdown("---")
+
+    # ─── Results table ──────────────────────────────────────────────────────────────────────────
+    st.subheader(f'Top {top_n} songs matching: *"{cleaned_query}"*')
+
+    results = results[
+        [
+            "rank",
+            "album_cover_url",
+            "artist",
+            "title",
+            "album",
+            "release_date",
+            "similarity",
+        ]
+    ]
+
+    # Color code the similarity score column
+    styled = results.style.background_gradient(
+        subset=["similarity"],
+        cmap="YlGn",
+        vmin=0.0,
+        vmax=1.0,
+    )  # .format({"similarity": ":.4f"})
+
+    st.dataframe(
+        styled,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "album_cover_url": st.column_config.ImageColumn(
+                label="album cover",
+                width="small",  # renders as a medium square thumbnail
+                help="Album photo from Genius",
+            ),
+        },
+    )
+
+    st.markdown("---")

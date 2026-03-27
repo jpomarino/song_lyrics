@@ -125,7 +125,7 @@ def get_artist_similarity_matrix(
     return pd.DataFrame(matrix, index=artists, columns=artists).round(4)
 
 
-def get_top_similar_artist(
+def get_top_similar_artists(
     artist_name: str, similarity_matrix: pd.DataFrame, top_n: int = 5
 ) -> pd.DataFrame:
 

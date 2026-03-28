@@ -211,7 +211,7 @@ def render_overview():
 
     st.title("🎵 Lyrics Analysis — Overview")
     st.markdown(
-        "Explore themes, similarities, and recommendations across your "
+        "Explore themes, similarities, and recommendations across a "
         f"lyrics corpus of **{len(df):,} songs** by **{df['artist'].nunique()} artists**."
     )
     st.markdown("---")
@@ -255,7 +255,7 @@ def render_overview():
     st.subheader("Artist Similarity Heatmap")
     st.caption(
         "Cosine similarity between artist centroids in embedding space. "
-        "Higher values indicate more similar lyrical style and themes."
+        "Higher values indicate more similar lyrical content and themes."
     )
     fig_heat = px.imshow(
         artist_sim_matrix,
@@ -266,7 +266,17 @@ def render_overview():
         template="plotly_dark",
         labels=dict(color="Similarity"),
     )
-    fig_heat.update_layout(height=500, margin=dict(t=20, b=20, l=20, r=20))
+    fig_heat.update_layout(
+        height=700,  # taller to give labels more room
+        margin=dict(t=20, b=120, l=120, r=20),  # extra margin for rotated labels
+    )
+    fig_heat.update_xaxes(
+        tickangle=-45,
+        tickfont=dict(size=10),
+    )
+    fig_heat.update_yaxes(
+        tickfont=dict(size=10),
+    )
     fig_heat.update_traces(
         hovertemplate="<b>%{x}</b> vs <b>%{y}</b><br>Similarity: %{z:.3f}<extra></extra>"
     )

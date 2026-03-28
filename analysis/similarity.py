@@ -152,7 +152,6 @@ def get_top_similar_artists(
 def get_song_similarity_matrix(
     df: pd.DataFrame, embeddings: np.ndarray, artist: str | None = None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-
     if artist:
         mask = df["artist"] == artist
         sub_df = df[mask].reset_index(drop=True)
@@ -164,7 +163,7 @@ def get_song_similarity_matrix(
 
     labels = (sub_df["artist"] + " - " + sub_df["title"]).to_list()
     sim_matrix = cosine_similarity(sub_embeddings).round(4)
-    sim_df = pd.DataFrame(sim_matrix, index=False, columns=labels)
+    sim_df = pd.DataFrame(sim_matrix, index=labels, columns=labels)
 
     return sim_df, sub_df
 

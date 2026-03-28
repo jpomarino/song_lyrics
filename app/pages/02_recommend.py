@@ -171,3 +171,133 @@ if search_clicked and query_input.strip():
     )
 
     st.markdown("---")
+
+    # # ── Similarity distribution chart ─────────────────────────────────────
+    # st.subheader("Similarity Score Distribution")
+    # st.caption("How similar the top results are relative to each other.")
+
+    # fig_bar = px.bar(
+    #     results,
+    #     x="similarity",
+    #     y="title",
+    #     orientation="h",
+    #     color="similarity",
+    #     color_continuous_scale="YlGn",
+    #     hover_data=["artist", "album"],
+    #     labels={"similarity": "Cosine Similarity", "title": "Song"},
+    #     template="plotly_dark",
+    # )
+    # fig_bar.update_layout(
+    #     height=max(300, top_n * 30),
+    #     yaxis=dict(autorange="reversed"),
+    #     coloraxis_showscale=False,
+    #     margin=dict(t=10, b=10, l=10, r=10),
+    # )
+    # st.plotly_chart(fig_bar, use_container_width=True)
+
+    # ── UMAP overlay ──────────────────────────────────────────────────────
+    if show_umap and umap_2d is not None:
+        st.subheader("Query Position in Embedding Space")
+        st.caption(
+            "The ⭐ shows where your query lands in the UMAP projection. "
+            "The highlighted points are the top results."
+        )
+
+        # Project query vector into 2D UMAP space using the fitted reducer
+        # We approximate by finding the weighted centroid of top results
+        top_indices_global = df[
+            df["title"].isin(results["title"]) & df["artist"].isin(results["artist"])
+        ].index.tolist()[:top_n]
+
+        # Build base scatter plot
+        plot_df = pd.DataFrame(
+            {
+                "x": umap_2d[:, 0],
+                "y": umap_2d[:, 1],
+                "artist": df["artist"],
+                "title": df["title"],
+                "is_result": [i in top_indices_global for i in range(len(df))],
+            }
+        )
+
+        fig_umap = px.scatter(
+            plot_df[~plot_df["is_result"]],
+            x="x",
+            y="y",
+            color="artist",
+            hover_name="title",
+            template="plotly_dark",
+            opacity=0.25,
+            color_discrete_sequence=px.colors.qualitative.Pastel,
+        )
+        fig_umap.update_traces(marker=dict(size=4))
+
+        # Highlight top results
+        result_points = plot_df[plot_df["is_result"]]
+        fig_umap.add_trace(
+            go.Scatter(
+                x=result_points["x"],
+                y=result_points["y"],
+                mode="markers",
+                marker=dict(
+                    size=12,
+                    color="gold",
+                    line=dict(width=1.5, color="white"),
+                    symbol="circle",
+                ),
+                text=result_points["title"],
+                hovertemplate="<b>%{text}</b><extra>Top Result</extra>",
+                name="Top Results",
+            )
+        )
+
+        # Show query centroid as a star
+        if len(top_indices_global) > 0:
+            qx = umap_2d[top_indices_global, 0].mean()
+            qy = umap_2d[top_indices_global, 1].mean()
+            fig_umap.add_trace(
+                go.Scatter(
+                    x=[qx],
+                    y=[qy],
+                    mode="markers+text",
+                    text=["⭐ Query"],
+                    textposition="top center",
+                    textfont=dict(color="white", size=12),
+                    marker=dict(
+                        size=18,
+                        color="red",
+                        symbol="star",
+                        line=dict(width=1.5, color="white"),
+                    ),
+                    name="Query",
+                    hovertemplate=f"<b>Query:</b> {cleaned_query}<extra></extra>",
+                )
+            )
+
+        fig_umap.update_layout(
+            height=550,
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=""),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=""),
+            margin=dict(t=20, b=20, l=20, r=20),
+        )
+        st.plotly_chart(fig_umap, use_container_width=True)
+
+    # # ── Matching themes ───────────────────────────────────────────────────
+    # if show_topics and topic_model is not None:
+    #     st.markdown("---")
+    #     st.subheader("Matching Themes")
+    #     st.caption("Topics in the corpus that are most semantically related to your query.")
+
+    #     try:
+    #         topic_matches = find_topic_for_query(
+    #             query_text=cleaned_query,
+    #             model=topic_model,
+    #             embed_query_fn=embed_query,
+    #             top_n=5,
+    #         )
+    #         st.dataframe(topic_matches, use_container_width=True, hide_index=True)
+    #     except Exception as e:
+    #         st.info(f"Could not compute topic matches: {e}")
+
+elif search_clicked and not query_input.strip():
+    st.warning("Please enter a query before searching.")

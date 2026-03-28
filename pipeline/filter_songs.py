@@ -30,13 +30,9 @@ def filter_songs_manually(df: pd.DataFrame) -> pd.DataFrame:
     ]
 
     # 3. Audrey Hobert (no need to filter)
-
     # 4. Reneé Rapp (no need to filter)
-
     # 5. Holly Humberstone (no need to filter)
-
     # 6. Maisie Peters (no need to filter)
-
     # 7. Carly Rae Jepsen (no need to filter)
 
     # 8. Lorde
@@ -69,11 +65,8 @@ def filter_songs_manually(df: pd.DataFrame) -> pd.DataFrame:
     df = df[~df["title"].str.contains(r"sped-up|slowed", case=False)]
 
     # 15. Chappell Roan (no need to filter)
-
     # 16. Olivia Dean (no need to filter)
-
     # 17. Rachel Chinouriri (no need to filter)
-
     # 18. Ethel Cain (no need to filter)
 
     # 19. Kacey Musgraves
@@ -92,6 +85,62 @@ def filter_songs_manually(df: pd.DataFrame) -> pd.DataFrame:
             )
         )
     ]
+
+    # 21. Lady Gaga
+    df = df[~df["title"].str.contains("Manhattan Clique")]
+
+    # 22. SZA
+    df = df[~df["title"].isin(["Snooze (Clean)", "Kill Bill (Vocals)"])]
+
+    # 23. Dua Lipa
+    df = df[~df["title"].str.contains(r"Extended|Refix|Rework", case=False)]
+
+    # 24. Clairo
+    df = df[~df["album"].isin(["DJ BABY BENZ", "SPECIAL INTEREST", "demos"])]
+
+    # 25. Rihanna
+    df = df[
+        ~df["title"].isin(
+            [
+                "Umbrella (Cinderella)",
+                "Only Girl (In The World) [The Bimbo Jones Radio]",
+                "Breakin’ Dishes (Soul Seekerz)",
+                "Only Girl (In the World) [Extended Club]",
+            ]
+        )
+    ]
+    df = df[~((df["title"].str.contains("Fix")) & (df["artist"] == "Rihanna"))]
+    df = df[~df["album"].str.contains(r"Remixes|Super Bowl Halftime Shows", case=False)]
+
+    # 26. MUNA (no need to filter)
+
+    # 27. Zara Larsson
+    df = df[~df["album"].isin(["Honor The Light", "Midnight Sun (+ more)"])]
+
+    # 28. PinkPantheress
+    df = df[~df["album"].isin(["Fancy Some More?", "Heavenknowsremixes"])]
+
+    # 29. Beyoncé
+    df = df[
+        ~df["album"].isin(
+            [
+                "Lemonade Film (Poetry + Script)",
+                "Dreamgirls (Music from the Motion Picture)",
+                "The Lion King: The Gift",
+                "Super Bowl Halftime Shows",
+                "HOMECOMING: THE LIVE ALBUM",
+                "B’Day (New Zealand iTunes Edition)",
+                "Bad Boys II - The Soundtrack",
+                "Dangerously In Love (Japanese Edition)",
+                "The Best Man (Music from the Motion Picture)",
+            ]
+        )
+    ]
+    df = df[~df["title"].isin(["Si Yo Fuera un Chico", "Amor Gitano"])]
+
+    # 30. RAYE (no need to filter)
+    # 31. Griff (no need to filter)
+    # 32. flowerovlove (no need to filter)
 
     return df
 

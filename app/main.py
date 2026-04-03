@@ -56,7 +56,6 @@ st.markdown(
 
 DATA_DIR = ROOT / "data" / "processed"
 CACHE_DIR = ROOT / "data" / "cache"
-# MODELS_DIR = ROOT / "models"
 
 
 @st.cache_data(show_spinner="Loading song data...")
@@ -175,10 +174,9 @@ def render_sidebar():
         st.markdown("### Navigation")
         st.page_link("main.py", label="🏠  Overview", icon=None)
         st.page_link("pages/01_explore.py", label="🗺️  Explore", icon=None)
-        # st.page_link("app/pages/02_recommend.py",      label="🔍  Recommend",           icon=None)
-        # st.page_link("app/pages/03_themes.py",         label="🎨  Themes",              icon=None)
-        # st.page_link("app/pages/04_similarity.py",     label="🔗  Song Similarity",     icon=None)
-        # st.page_link("app/pages/05_scrape.py",         label="➕  Add Artist",          icon=None)
+        st.page_link("pages/02_recommend.py", label="🔍  Recommend", icon=None)
+        st.page_link("pages/03_themes.py", label="🎨  Themes", icon=None)
+        st.page_link("pages/04_similarity.py", label="🔗  Song Similarity", icon=None)
 
         st.markdown("---")
 
@@ -194,7 +192,7 @@ def render_sidebar():
                 )
 
         st.markdown("---")
-        st.caption("Built with sentence-transformers, BERTopic & Streamlit")
+        st.caption("Built with sentence-transformers, Ollama, and Streamlit")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

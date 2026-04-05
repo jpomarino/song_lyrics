@@ -47,7 +47,7 @@ THEMES = [
     # Life & lifestyle
     "party / hedonism",
     "fame / celebrity life",
-    "holiday / seasonal",
+    "holiday",
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -96,9 +96,31 @@ You must ONLY use themes from the provided list — do not invent new ones.
 Always respond with a valid JSON array of strings and nothing else.
 Do not include any explanation, preamble, or markdown formatting."""
 
+# One-line definitions shown to the model to prevent vague over-classification
+THEME_DEFINITIONS = {
+    "romantic love": "songs celebrating being in love or a loving relationship",
+    "lust / desire": "songs about physical attraction, wanting someone sexually",
+    "heartbreak / breakup": "songs about the pain of a relationship ending",
+    "longing / unrequited love": "songs about missing someone or loving someone who doesn't love back",  # — only assign if longing is the DOMINANT theme, not just present",
+    "self-confidence / empowerment": "songs about feeling good with oneself, believing in yourself, independence, owning your identity",
+    "grief / loss": "songs about death, mourning, or losing someone permanently",
+    "nostalgia / coming of age": "songs about looking back on youth, growing up, or the passage of time",
+    "faith / spirituality": "songs explicitly referencing God, prayer, religion, or spiritual belief",
+    "party / hedonism": "songs about going out, dancing, drinking, having fun with no strings",
+    "friendship / sisterhood": "songs addressed to or about close friends, chosen family, or female solidarity",
+    "toxic relationship": "songs about a relationship that is unhealthy, controlling, or mutually destructive",
+    "moving on / healing": "songs about recovering from heartbreak, growing after pain, choosing yourself",
+    "identity / self-discovery": "songs about figuring out who you are, your place in the world",
+    "holiday": "songs explicitly about Christmas, winter holidays, New Year",  # — assign this if ANY holiday references appear",
+    "fame / celebrity life": "songs about the experience of being famous, public life, or the music industry",
+    "mental health / anxiety": "songs explicitly about depression, anxiety, therapy, or mental illness",
+    "LGBTQ+": "songs with explicit or strongly implied same-sex attraction, queer and gender identity/experience  — assign this if ANY queer coding is present",
+    "body image": "songs explicitly about physical appearance, body acceptance, or how the singer feels about their body",
+}
+
 
 def build_classification_prompt(
-    lyrics: str, title: str, artist: str, max_themes: int = 3
+    lyrics: str, title: str, artist: str, max_themes: int = 2
 ) -> str:
     """
     Build the user prompt for a single song classification.
@@ -106,11 +128,13 @@ def build_classification_prompt(
 
     # Use the first 200 words of a song to avoid hitting token limit
     lyrics_snippet = " ".join(lyrics.split()[:200])
-    themes_formatted = "\n".join(f"  - {t}" for t in THEMES)
+    themes_formatted = "\n".join(
+        f"  - {t}: {THEME_DEFINITIONS.get(t, '')}" for t in THEMES
+    )
 
-    return f"""Assign 1 to {max_themes} themes to this song from the list below.
+    return f"""Assign 1 to {max_themes} themes to this song using the definitions below.
 
-AVAILABLE THEMES:
+THEMES WITH DEFINITIONS:
 {themes_formatted}
 
 SONG: "{title}" by {artist}
@@ -118,13 +142,19 @@ SONG: "{title}" by {artist}
 LYRICS:
 {lyrics_snippet}
 
-RULES:
-- Choose only from the available themes above
-- Return between 1 and {max_themes} themes
-- Return a JSON array of strings only
-- Example valid response: ["heartbreak / breakup", "moving on / healing"]
+INSTRUCTIONS:
+1. Choose the MOST SPECIFIC themes that apply — prefer specific over general.
+2. Return between 1 and {max_themes} themes as a JSON array of strings only.
+3. Example: ["LGBTQ+", "romantic love"]
 
 Your response:"""
+
+
+# 1. First check for SPECIFIC themes: "holiday / seasonal", "LGBTQ+", "body image",
+# "faith / spirituality", "fame / celebrity life". If ANY of these apply even
+# partially, consider including them BEFORE adding general themes.
+# 2. Only assign "longing / unrequited love" if longing is the song's PRIMARY subject,
+# not just a passing feeling.
 
 
 def parse_llm_response(raw: str) -> list[str]:
@@ -196,7 +226,7 @@ def classify_song(
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=80,
-                temperature=0.0,
+                temperature=0.1,
             )
             raw = response.choices[0].message.content.strip()
             themes = parse_llm_response(raw)
@@ -657,6 +687,103 @@ def load_theme_results(
 # PER-ARTIST CLUSTER LABELING (for artists with more than 30 songs)
 # ─────────────────────────────────────────────────────────────────────────────
 
+CLUSTER_SYSTEM_PROMPT = """You are a music analyst labeling lyrical themes.
+Generate short, neutral, descriptive labels for groups of songs.
+
+CRITICAL RULES — you must follow all of these without exception:
+- Labels must describe lyrical CONTENT and THEMES only (e.g. what the songs are about)
+- Labels must NEVER reference the artist's race or ethnicity
+- Labels must NEVER use culturally coded or racially loaded descriptors.
+  Forbidden examples: sassy, soulful, fierce, urban, hood, exotic, sultry, feisty, 
+  ratchet, ghetto, street
+- Keep labels to 2-6 words
+- Return ONLY the label, no explanation"""
+
+# - Labels must be the same quality and register regardless of the artist's identity
+# - Labels must describe what the LYRICS are about, not the artist's personality or style
+
+
+def _get_cluster_label(
+    client,
+    model: str,
+    artist: str,
+    rep_songs: pd.DataFrame,
+    used_labels: list[str],
+) -> str:
+    """
+    Ask the LLM to generate a single cluster label from representative songs.
+    Shared by both the small-artist centroid path and the full clustering path.
+    """
+    songs_text = ""
+    for _, row in rep_songs.iterrows():
+        snippet = " ".join(str(row.get("lyrics_for_llm", "")).split()[:80])
+        songs_text += f'\n---\n"{row["title"]}":\n{snippet}'
+
+    used_labels_str = (
+        (
+            "\nALREADY USED LABELS (choose something meaningfully different): "
+            + ", ".join(f'"{l}"' for l in used_labels)
+        )
+        if used_labels
+        else ""
+    )
+
+    prompt = (
+        f"These songs by {artist} form a distinct lyrical group.\n"
+        f"Write a vivid, specific 2-6 word label describing what unites them.\n"
+        f"{songs_text}\n"
+        f"{used_labels_str}\n\n"
+        f"Rules:\n"
+        f"- Describe the LYRICAL CONTENT specifically (situations, emotions, "
+        f"storylines in the words) — not the genre or production style\n"
+        # f'- Be evocative and specific: prefer "falling for your best friend" '
+        # f'over "romantic feelings", "escaping a bad relationship" over "breakup"\n'
+        f"- 2-6 words, no quotes in your response\n"
+        f"- Must be different from any already used labels\n"
+        f"Your label:"
+    )
+
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": CLUSTER_SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=30,  # slightly more room for descriptive labels
+            temperature=0.5,  # higher than before — encourages vivid phrasing
+        )
+        label = resp.choices[0].message.content.strip().strip('"').strip("'")
+
+        # Blocklist check
+        # BLOCKLIST = {
+        #     "sassy", "soulful", "fierce", "urban", "hood", "raw", "gritty",
+        #     "exotic", "sultry", "feisty", "ratchet", "ghetto", "street",
+        #     "edgy", "spicy", "authentic", "real", "spiritual",
+        # }
+        # if set(label.lower().split()): #& BLOCKLIST:
+        #     print(f"  [flagged] '{label}' — retrying")
+        #     resp = client.chat.completions.create(
+        #         model=model,
+        #         messages=[
+        #             {"role": "system", "content": CLUSTER_SYSTEM_PROMPT},
+        #             {"role": "user", "content": (
+        #                 f"{prompt}\n\nIMPORTANT: Your previous response '{label}' "
+        #                 f"used a culturally coded term. Describe only what the "
+        #                 f"lyrics are literally about."
+        #             )},
+        #         ],
+        #         max_tokens=30,
+        #         temperature=0.0,
+        #     )
+        #     label = resp.choices[0].message.content.strip().strip('"').strip("'")
+
+        return label
+
+    except Exception as e:
+        print(f"  [warn] label failed: {e}")
+        return "unlabeled cluster"
+
 
 def _label_artist_clusters_offline(
     artist: str,
@@ -685,15 +812,27 @@ def _label_artist_clusters_offline(
     # ── Too few songs — skip clustering ───────────────────────────────────
     if n_songs < min_songs_for_clustering:
         print(
-            f"  [skip] {artist}: only {n_songs} songs "
-            f"(need {min_songs_for_clustering}). Marking as unclustered."
+            f"  {artist}: only {n_songs} songs — "
+            f"skipping clustering, labeling from centroid."
+        )
+        centroid = artist_vecs.mean(axis=0)
+        distances = np.linalg.norm(artist_vecs - centroid, axis=1)
+        rep_idx = np.argsort(distances)[:5]
+        rep_songs = artist_df.iloc[rep_idx]
+
+        label = _get_cluster_label(
+            client=client,
+            model=model,
+            artist=artist,
+            rep_songs=rep_songs,
+            used_labels=[],
         )
         songs = [
             {
                 "title": row["title"],
                 "album": row.get("album", ""),
                 "cluster_id": 0,
-                "cluster_label": "all songs",
+                "cluster_label": label,
             }
             for _, row in artist_df.iterrows()
         ]
@@ -702,7 +841,7 @@ def _label_artist_clusters_offline(
             "n_clusters": 1,
             "clusterable": False,
             "songs": songs,
-            "cluster_labels": {"0": "all songs"},
+            "cluster_labels": {"0": label},
         }
 
     # ── Auto-select k via silhouette score ────────────────────────────────
@@ -730,63 +869,16 @@ def _label_artist_clusters_offline(
         c_vecs = artist_vecs[mask.values]
         centroid = km.cluster_centers_[cid]
         distances = np.linalg.norm(c_vecs - centroid, axis=1)
-        rep_indices = np.argsort(distances)[:5]
-        rep_songs = c_songs.iloc[rep_indices]
+        rep_idx = np.argsort(distances)[:5]
+        rep_songs = c_songs.iloc[rep_idx]
 
-        songs_text = ""
-        for _, row in rep_songs.iterrows():
-            snippet = " ".join(str(row.get("lyrics_for_llm", "")).split()[:80])
-            songs_text += f'\n---\n"{row["title"]}":\n{snippet}'
-
-        used_labels_str = (
-            "\nALREADY USED LABELS (do not repeat these): "
-            + ", ".join(f'"{l}"' for l in cluster_labels.values())
-            if cluster_labels
-            else ""
+        label = _get_cluster_label(
+            client=client,
+            model=model,
+            artist=artist,
+            rep_songs=rep_songs,
+            used_labels=list(cluster_labels.values()),  # pass already-used labels
         )
-
-        prompt = (
-            f"These songs by {artist} belong to the same thematic cluster.\n"
-            f"What 2-4 word theme label best describes what unites them?\n"
-            f"{songs_text}\n\n"
-            f"{used_labels_str}\n\n"
-            f"Rules:\n"
-            f"- Respond with ONLY a short theme label (2-4 words), nothing else\n"
-            f"- The label must be DIFFERENT from any already used labels above\n"
-            f"- Focus on the specific lyrical content, not the general mood\n"
-            f'Examples: "romantic longing", "self-empowerment", "teenage angst"\n'
-            f"Your label:"
-        )
-
-        CLUSTER_SYSTEM_PROMPT = """You are a music analyst labeling lyrical themes.
-Generate short, neutral, descriptive labels for groups of songs.
-
-CRITICAL RULES — you must follow all of these without exception:
-- Labels must describe lyrical CONTENT and THEMES only (e.g. what the songs are about)
-- Labels must NEVER reference the artist's race or ethnicity
-- Labels must NEVER use culturally coded or racially loaded descriptors.
-  Forbidden examples: sassy, soulful, fierce, urban, hood, exotic, sultry, feisty, 
-  ratchet, ghetto, street
-- Labels must be the same quality and register regardless of the artist's identity
-- Labels must describe what the LYRICS are about, not the artist's personality or style
-- Keep labels to 2-4 words
-- Return ONLY the label, no explanation"""
-
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": CLUSTER_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt},
-                ],
-                max_tokens=20,
-                temperature=0.2,
-            )
-            label = resp.choices[0].message.content.strip().strip('"').strip("'")
-        except Exception as e:
-            print(f"  [warn] cluster {cid} label failed for {artist}: {e}")
-            label = f"cluster {cid}"
-
         cluster_labels[str(cid)] = label
 
     print(f"  {artist} → {list(cluster_labels.values())}")

@@ -1,4 +1,4 @@
-import os
+# import os
 import re
 import sys
 import json
@@ -722,7 +722,7 @@ def _get_cluster_label(
     used_labels_str = (
         (
             "\nALREADY USED LABELS (choose something meaningfully different): "
-            + ", ".join(f'"{l}"' for l in used_labels)
+            + ", ".join(f'"{la}"' for la in used_labels)
         )
         if used_labels
         else ""

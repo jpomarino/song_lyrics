@@ -105,7 +105,7 @@ with tab1:
     st.markdown(
         """
         Select a song and the app finds its nearest neighbours in embedding
-        space — the songs whose lyrics encode to the most similar vector.
+        space (the songs whose lyrics encode to the most similar vector).
         This is the same mechanism that powers the recommender page, but
         anchored to an existing song rather than a free-text query.
  

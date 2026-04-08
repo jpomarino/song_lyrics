@@ -365,9 +365,9 @@ def render_overview():
         content? What makes one artist's writing feel distinct from another's?*
  
         This project is an attempt to answer those questions rigorously, using NLP
-        and machine learning on a corpus of lyrics I scraped from
-        [Genius](https://genius.com). The result is an interactive tool that lets
-        you explore lyrical similarity, discover thematic patterns, and find new
+        and machine learning on a corpus of lyrics from some of my favorite artists 
+        I scraped from [Genius](https://genius.com). The result is an interactive 
+        tool that lets you explore lyrical similarity, discover thematic patterns, and find new
         songs based on a word, phrase, or lyric you already love.
         """
     )
@@ -408,35 +408,35 @@ def render_overview():
         ),
         (
             "🧹  2. Filtering & Cleaning",
-            "Duplicate songs were removed. Songs with less than 30 words were removed."
+            "Duplicate songs were removed. Songs with less than 30 words were removed. "
             "Non-song results were manually removed. Lyrics were lightly cleaned "
             "(section headers like `[Verse 1]` stripped, whitespace collapsed) "
             "preserving natural language for the embedding model.",
         ),
         (
             "🔢  3. Vector Embeddings",
-            "Each song's lyrics were converted into a **384-dimensional vector** "
+            "Each song's lyrics were converted into a 384-dimensional vector "
             "using `all-MiniLM-L6-v2` from Sentence Transformers. "
             "Songs that are semantically similar end up close together in this space. "
             "Long lyrics were chunked into overlapping windows and averaged.",
         ),
         (
             "🗺️  4. UMAP Projection",
-            "The 384-dimensional embeddings were projected into **2D** using UMAP "
-            "for visualisation. This is what you see on the Explore page — "
+            "The 384-dimensional embeddings were projected into 2D using UMAP "
+            "for visualisation. This is what you see on the Explore page: "
             "every point is a song, and proximity means lyrical similarity.",
         ),
         (
             "📐  5. Similarity Calculations",
-            "**Cosine similarity** between embedding vectors powers the song "
+            "Cosine similarity between embedding vectors powers the song "
             "recommender and the artist similarity heatmap. "
             "Songs or artists with similar language score close to 1.0.",
         ),
         (
             "🏷️  6. Theme Classification",
             "Each song was classified into 1–2 themes from a fixed 18-label "
-            "taxonomy using **Llama 3.2** running locally via Ollama. "
-            "This was run once offline — the app reads pre-saved results.",
+            "taxonomy using Llama 3.2 running locally via Ollama. "
+            "This was run once offline and this app reads pre-saved results.",
         ),
     ]
 
@@ -494,7 +494,7 @@ def render_overview():
     st.caption(
         "Lexical diversity = unique words ÷ total words, averaged across all songs. "
         "A score of 1.0 means every word is used exactly once (maximally varied). "
-        "A low score means the artist repeats words heavily — common in songs "
+        "A low score means the artist repeats words heavily, which is common in songs "
         "with long, repetitive choruses. This is a measure of vocabulary range, "
         "not lyrical quality."
     )

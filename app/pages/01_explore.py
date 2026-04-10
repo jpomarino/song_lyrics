@@ -137,10 +137,10 @@ st.markdown(
     Each point is a song. Its position comes from:
  
     1. Converting lyrics into a **384-dimensional vector** using a sentence
-       embedding model — a mathematical representation of meaning.
+       embedding model.
     2. Projecting those 384 dimensions to **2D using UMAP** for visualisation.
  
-    **Proximity = lyrical similarity.** Songs close together use similar language,
+    **Proximity = lyrical similarity.** Songs close together use similar words,
     themes, and emotional register. Use the tabs below to explore the map coloured
     by artist, by individual theme, or by discovered cluster.
     """
@@ -167,7 +167,7 @@ tab1, tab2, tab3 = st.tabs(
 with tab1:
     st.subheader("Where Do Each Artist's Songs Live?")
     st.caption(
-        "Points are coloured by artist. Tight groups indicate a consistent "
+        "Points are colored by artist. Tight groups indicate a consistent "
         "lyrical style; spread-out artists range across many themes. "
         "Artists that overlap in the map write about similar things."
     )
@@ -192,7 +192,7 @@ with tab1:
     n_visible = filtered_df["artist"].nunique()
     fig1.update_layout(
         height=640,
-        showlegend=(n_visible <= 10),
+        showlegend=True,  # (n_visible <= 10),
         legend=dict(
             title="Artist",
             itemsizing="constant",
@@ -254,7 +254,6 @@ with tab1:
         "**Cluster spread** is the standard deviation of each artist's songs "
         "in UMAP space. A low value means consistent lyrical style. "
         "A high value means the artist ranges across many themes. "
-        "This is not a quality judgement — it measures stylistic range."
     )
 
     spread_df = (
@@ -298,13 +297,13 @@ with tab2:
     st.subheader("Where Do Specific Themes Live in Embedding Space?")
     st.markdown(
         """
-        Inspired by gene expression UMAPs — where each gene is coloured by
-        its expression level across cells — this view lets you select a lyrical
+        Inspired by gene expression UMAPs, where each gene is colored by
+        its expression level across cells, this view lets you select a lyrical
         theme and see which songs carry it, and *where* those songs sit on the map.
  
         **How to read this:** highlighted points are songs tagged with the
         selected theme. If a theme forms a coherent spatial region, it means
-        lyrically similar songs share that theme — the embedding model has
+        lyrically similar songs share that theme: the embedding model has
         implicitly learned to group by theme without being trained to do so.
         If a theme is scattered randomly, it cuts across many lyrical styles.
         """
@@ -449,15 +448,15 @@ with tab3:
     st.markdown(
         """
         Visual inspection of the UMAP suggests the corpus splits into two
-        broad regions. To test this formally, we applied **KMeans (k=2)** in
-        the full 384-dimensional embedding space — *not* on the 2D projection,
-        because UMAP distorts distances and should only be used for visualisation.
+        broad regions. To test this formally, I applied **KMeans (k=2)** in
+        the full 384-dimensional embedding space (*not* on the 2D projection,
+        because UMAP distorts distances and should only be used for visualisation).
  
         Two questions:
  
         1. **Do the clusters look spatially coherent on the UMAP?**
            If the partition is meaningful, the two groups should occupy
-           different regions of the map — not be randomly interspersed.
+           different regions of the map, not be randomly interspersed.
         2. **Do the clusters have statistically different theme profiles?**
            A **chi-square test of independence** tests whether theme
            distributions differ significantly between clusters, or whether
@@ -520,7 +519,7 @@ with tab3:
         "What fraction of each artist's songs fall into Cluster 0 vs Cluster 1? "
         "An artist concentrated in one cluster writes consistently in one lyrical "
         "register. An artist split roughly 50/50 across both clusters has a more "
-        "varied output — some songs lyrical territory, some in another."
+        "varied output."
     )
 
     ac = filtered_df.groupby(["artist", "cluster"]).size().reset_index(name="songs")
@@ -620,17 +619,17 @@ with tab3:
             A **chi-square test of independence** tests whether the theme
             differences between clusters could have arisen by chance.
  
-            **Null hypothesis H₀:** theme assignment is independent of cluster —
-            knowing which cluster a song is in tells you nothing about its themes.
+            **Null hypothesis H₀:** theme assignment is independent of cluster.
+            Knowing which cluster a song is in tells you nothing about its themes.
  
             **How it works:** the test builds a contingency table of
             (theme × cluster) counts and measures how far the observed counts
             deviate from what we'd expect if themes were distributed identically
             across both clusters.
  
-            **How to read the p-value:** below 0.05 means we reject H₀ —
-            the clusters have statistically different theme profiles, providing
-            formal evidence that KMeans found a meaningful thematic partition.
+            **How to read the p-value:** below 0.05 means we reject H₀ 
+            (the clusters have statistically different theme profiles, providing
+            formal evidence that KMeans found a meaningful thematic partition).
             """
         )
 

@@ -2,7 +2,7 @@
  
 An end-to-end NLP project that scrapes song lyrics, embeds them using a sentence transformer model, and serves an interactive Streamlit app for exploring lyrical similarity, themes, and recommendations across a curated corpus of artists.
  
-**Live app:** [your-app-url.streamlit.app](https://your-app-url.streamlit.app)
+**Live app:** [https://jpomarino-song-lyrics-appmain-fjnwwp.streamlit.app/](https://jpomarino-song-lyrics-appmain-fjnwwp.streamlit.app/)
  
 ## Motivation
  

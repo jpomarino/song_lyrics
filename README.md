@@ -4,8 +4,6 @@ An end-to-end NLP project that scrapes song lyrics, embeds them using a sentence
  
 **Live app:** [your-app-url.streamlit.app](https://your-app-url.streamlit.app)
  
----
- 
 ## Motivation
  
 I have always cared about song lyrics more than most people I know. For me, lyrics are often the primary reason I connect with an artist. Over time I started asking questions I could not easily answer by just listening:
@@ -15,8 +13,6 @@ I have always cared about song lyrics more than most people I know. For me, lyri
 - What makes one artist's writing feel distinct from another's?
  
 This project is an attempt to answer those questions with data. It pulls together web scraping, NLP preprocessing, vector embeddings, unsupervised clustering, LLM-based classification, and an interactive deployment. It started as a way to pick up new data science skills and turned into something I genuinely use.
- 
----
  
 ## What the App Does
  
@@ -31,8 +27,6 @@ The app has five pages:
 **Themes** shows how songs are distributed across 18 lyrical themes classified by a local LLM. You can view the corpus-wide theme breakdown, compare artists' theme profiles side by side, see how each artist deviates from the corpus average, and explore which themes tend to co-occur.
  
 **Similarity** lets you find songs most similar to a chosen song, explore an artist's full discography as a pairwise similarity heatmap, compare artists to each other, and visualize artist distinctiveness as a scatter plot of intra-artist vs inter-artist similarity.
- 
----
  
 ## Project Structure
  
@@ -72,8 +66,6 @@ song_lyrics/
 └── README.md
 ```
  
----
- 
 ## Pipeline Overview
  
 ### 1. Scraping
@@ -100,8 +92,6 @@ Cosine similarity between embedding vectors powers the song recommender, the son
  
 Each song is classified into 1 to 2 themes from a fixed 18-label taxonomy using **Llama 3.2** running locally via [Ollama](https://ollama.com). The model receives the first 200 words of lyrics along with one-line definitions for each theme and instructions to prioritize specific themes over general ones. Classification runs once offline and results are saved to `song_themes.json`. The Streamlit app reads pre-saved results and never calls the model at runtime.
  
----
- 
 ## Tech Stack
  
 | Category | Tools |
@@ -115,8 +105,6 @@ Each song is classified into 1 to 2 themes from a fixed 18-label taxonomy using 
 | Statistical testing | `scipy` (chi-square) |
 | Visualization | `Plotly`, `Streamlit` |
 | Language | Python 3.12 |
- 
----
  
 ## Running Locally
  
@@ -192,8 +180,6 @@ Charli XCX, Sabrina Carpenter, Audrey Hober, Renee Rapp, Holly Humberstone, Mais
  
 The corpus intentionally focuses on a single genre and demographic to make similarity and theme comparisons more meaningful. Adding artists from very different genres will shift the corpus baseline and may affect theme proportion comparisons.
  
----
- 
 ## Key Design Decisions
  
 **Why not use BERTopic for theme labeling?** BERTopic discovers topics bottom-up from statistical patterns in text. On a pop lyrics corpus, this produces labels dominated by filler words and vague emotional language ("ooh yeah want I"). Defining a fixed taxonomy and using an LLM to classify each song produces far more interpretable and actionable results.
@@ -204,8 +190,6 @@ The corpus intentionally focuses on a single genre and demographic to make simil
  
 **Why cosine similarity rather than Euclidean distance?** All embeddings are L2-normalized before being saved, which means cosine similarity and dot product are equivalent. Cosine similarity is scale-invariant, which matters here because song length varies significantly and longer songs would otherwise produce higher-magnitude vectors.
  
----
- 
 ## Limitations
  
 Theme classifications are imperfect. The LLM occasionally assigns generic themes to songs that have more specific content, particularly for songs with abstract or metaphorical lyrics. The taxonomy itself reflects subjective choices about what constitutes a meaningful lyrical category.
@@ -213,8 +197,6 @@ Theme classifications are imperfect. The LLM occasionally assigns generic themes
 UMAP projections are non-deterministic and sensitive to hyperparameter choices. The visual clusters you see depend on the `n_neighbors` and `min_dist` settings, and re-running UMAP with different random seeds will produce different layouts even with identical embeddings.
  
 The corpus is intentionally narrow. Similarity scores are relative to the songs in this dataset, so a "high similarity" score means similar to other songs in this corpus, not to all music that exists.
- 
----
  
 ## Acknowledgments
  

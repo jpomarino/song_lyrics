@@ -147,7 +147,7 @@ with tab1:
             f"by {results.attrs.get('query_artist', query_artist)}:**"
         )
 
-        # Bar chart coloured by artist — colour adds information here
+        # Bar chart colored by artist — color adds information here
         # because it shows whether similar songs cluster within or across artists
         fig_bar = px.bar(
             results,
@@ -173,18 +173,18 @@ with tab1:
         )
         st.plotly_chart(fig_bar, use_container_width=True)
         st.caption(
-            "Colour encodes which artist each result belongs to. "
+            "Color encodes which artist each result belongs to. "
             "Results from the same artist as the query confirm the model is "
             "capturing intra-artist style. Results from other artists show "
             "cross-artist lyrical overlap."
         )
 
-        st.download_button(
-            "⬇️ Download results as CSV",
-            data=results.to_csv(index=False),
-            file_name=f"similar_to_{query_song[:30].replace(' ', '_')}.csv",
-            mime="text/csv",
-        )
+        # st.download_button(
+        #     "⬇️ Download results as CSV",
+        #     data=results.to_csv(index=False),
+        #     file_name=f"similar_to_{query_song[:30].replace(' ', '_')}.csv",
+        #     mime="text/csv",
+        # )
 
         # ── UMAP highlight ─────────────────────────────────────────────────
         if umap_2d is not None:
@@ -194,7 +194,7 @@ with tab1:
                 "The ⭐ marks the query song. Gold points are its nearest "
                 "neighbours. If they cluster tightly around the query on the "
                 "UMAP, the similarity scores reflect genuine spatial proximity "
-                "in embedding space — not just a numerical coincidence."
+                "in embedding space."
             )
 
             result_mask = df["title"].isin(results["title"]) & df["artist"].isin(
@@ -341,9 +341,8 @@ with tab1:
         )
         st.plotly_chart(fig_heat, use_container_width=True)
         st.caption(
-            "Red blocks = groups of mutually similar songs (thematic clusters). "
-            "Blue cells = songs with little in common. "
-            "Pale rows/columns = outlier songs that don't fit any cluster."
+            "Blue blocks = groups of mutually similar songs (thematic clusters). "
+            "Red cells = songs with little in common. "
         )
 
 
@@ -356,7 +355,7 @@ with tab2:
     st.markdown(
         """
         Each cell shows the cosine similarity between the **centroid embeddings**
-        of two artists — the mean of all their songs' embedding vectors.
+        of two artists: the mean of all their songs' embedding vectors.
         A high score means the two artists' catalogues occupy overlapping
         regions of the embedding space, implying shared lyrical themes,
         vocabulary, and emotional register.
@@ -454,19 +453,19 @@ with tab3:
         """
         **Distinctiveness** combines two measurements:
  
-        - **Intra-artist similarity** — how similar are an artist's songs
+        - **Intra-artist similarity**: how similar are an artist's songs
           *to each other*? High intra = consistent style across the discography.
-        - **Inter-artist similarity** — how similar are an artist's songs
+        - **Inter-artist similarity**: how similar are an artist's songs
           *to everyone else's songs*? Low inter = the artist occupies a unique
           region of the embedding space.
  
         An artist is **distinctive** when their intra-similarity is high
-        *and* their inter-similarity is low — they write consistently in a
+        *and* their inter-similarity is low, meaning that they write consistently in a
         style that nobody else shares.
  
         The scatter plot below shows both dimensions simultaneously.
         Each point is an artist. **Points above the diagonal** have higher
-        intra than inter similarity — their songs sound more like each other
+        intra than inter similarity; their songs sound more like each other
         than like the rest of the corpus. This is the definition of a
         distinctive voice. **Points on or below the diagonal** are artists
         whose songs blend into the general corpus style.
@@ -498,19 +497,16 @@ with tab3:
         )
     )
 
-    # Artist points coloured by distinctiveness score
+    # Artist points colored by distinctiveness score
     fig_scatter.add_trace(
         go.Scatter(
             x=similarity_stats["inter_similarity"],
             y=similarity_stats["intra_similarity"],
-            mode="markers+text",
-            text=similarity_stats["artist"],
-            textposition="top center",
-            textfont=dict(size=10, color="white"),
+            mode="markers",  # text removed from trace
             marker=dict(
                 size=14,
                 color=similarity_stats["distinctiveness"],
-                colorscale="RdYlGn",
+                colorscale="RdYlBu",
                 cmin=similarity_stats["distinctiveness"].min(),
                 cmax=similarity_stats["distinctiveness"].max(),
                 colorbar=dict(
@@ -528,6 +524,7 @@ with tab3:
                 ],
                 axis=-1,
             ),
+            text=similarity_stats["artist"],
             hovertemplate=(
                 "<b>%{text}</b><br>"
                 "Intra-similarity: %{customdata[1]:.4f}<br>"
@@ -538,6 +535,24 @@ with tab3:
             showlegend=False,
         )
     )
+
+    # Add artist name labels as annotations with opaque background boxes.
+    # This is the only Plotly mechanism that renders reliably on both light
+    # and dark backgrounds — bgcolor gives each label its own backdrop
+    # independent of the chart theme.
+    for _, row in similarity_stats.iterrows():
+        fig_scatter.add_annotation(
+            x=row["inter_similarity"],
+            y=row["intra_similarity"],
+            text=row["artist"],
+            showarrow=False,
+            yshift=12,
+            font=dict(size=10, color="#ffffff"),
+            bgcolor="rgba(30,30,46,0.82)",
+            bordercolor="rgba(255,255,255,0.2)",
+            borderwidth=1,
+            borderpad=3,
+        )
 
     fig_scatter.update_layout(
         template="plotly_dark",
@@ -584,9 +599,9 @@ with tab3:
     st.plotly_chart(fig_scatter, use_container_width=True)
 
     st.caption(
-        "Points above the dashed diagonal have higher intra than inter similarity "
-        "— they write consistently in a style that is uniquely their own. "
-        "Colour encodes the distinctiveness score (green = more distinctive). "
+        "Points above the dashed diagonal have higher intra than inter similarity: "
+        "they write consistently in a style that is uniquely their own. "
+        "Colour encodes the distinctiveness score (blue = more distinctive). "
         "Hover any point for exact values."
     )
 
@@ -614,7 +629,7 @@ with tab3:
         y="artist",
         orientation="h",
         color="distinctiveness",
-        color_continuous_scale="RdYlGn",
+        color_continuous_scale="RdYlBu",
         text=ranked["distinctiveness"].map(
             lambda v: f"+{v:.3f}" if v >= 0 else f"{v:.3f}"
         ),
@@ -635,6 +650,6 @@ with tab3:
     )
     st.plotly_chart(fig_ranked, use_container_width=True)
     st.caption(
-        "Green bars = artists with a more unique style than average. "
+        "Blue bars = artists with a more unique style than average. "
         "Red bars = artists whose style overlaps heavily with the corpus."
     )

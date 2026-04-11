@@ -177,7 +177,7 @@ with tab1:
     st.subheader("What Themes Dominate This Corpus?")
     st.markdown(
         """
-        Before comparing artists, it helps to understand the baseline —
+        Before comparing artists, it helps to understand the baseline:
         what themes are most and least common across all songs?
         This tells us whether an artist is writing about something typical
         for this corpus or genuinely unusual.
@@ -187,10 +187,10 @@ with tab1:
         [Ollama](https://ollama.com). The model was given a fixed taxonomy
         of 18 themes with one-line definitions and asked to assign 1–2 that
         best describe the song's lyrical content. The model was instructed
-        to prioritise specific themes (holiday, LGBTQ+, body image) over
-        general ones (longing, heartbreak) when both applied, to reduce
+        to prioritize specific themes (holiday, LGBTQ+, body image) over
+        general ones (longing, heartbreak) when both applied to reduce
         over-representation of vague catch-all categories.
-        All classifications were run once offline and saved — the app reads
+        All classifications were run once offline and saved. The app reads
         pre-saved results at runtime and never calls the model live.
         """
     )
@@ -205,7 +205,6 @@ with tab1:
             st.markdown("**How many songs are tagged with each theme?**")
             st.caption(
                 "Each song can carry 1–2 themes, so totals exceed the song count. "
-                "Longer bars = more common themes in this corpus."
             )
             fig_bar = px.bar(
                 corpus_summary,
@@ -233,9 +232,7 @@ with tab1:
                 "**What share of all theme assignments does each theme account for?**"
             )
             st.caption(
-                "This normalises for the fact that songs can have multiple themes. "
-                "The slice size answers: of all theme labels assigned across the "
-                "entire corpus, what fraction were this theme?"
+                "This normalizes for the fact that songs can have multiple themes. "
             )
             fig_pie = px.pie(
                 corpus_summary,
@@ -262,12 +259,7 @@ with tab1:
         # ── Assignment stats ───────────────────────────────────────────────
         st.markdown("---")
         st.subheader("How Many Themes Are Assigned per Song?")
-        st.caption(
-            "A well-calibrated classifier should assign 1–2 themes per song. "
-            "If most songs have 0 themes, the classifier needs retuning. "
-            "If most have 3+, the taxonomy may be too broad or the model "
-            "too permissive."
-        )
+        st.caption("A well-calibrated classifier should assign 1–2 themes per song. ")
 
         theme_counts_per_song = (
             df_themes["themes"].apply(len).value_counts().sort_index().reset_index()
@@ -289,13 +281,13 @@ with tab1:
             margin=dict(t=10, b=10, l=10, r=40),
             xaxis=dict(dtick=1),
         )
-        fig_dist.add_vline(
-            x=avg_t,
-            line_dash="dash",
-            line_color="rgba(255,255,255,0.4)",
-            annotation_text=f"Avg: {avg_t:.2f}",
-            annotation_position="top right",
-        )
+        # fig_dist.add_vline(
+        #     x=avg_t,
+        #     line_dash="dash",
+        #     line_color="rgba(255,255,255,0.4)",
+        #     annotation_text=f"Avg: {avg_t:.2f}",
+        #     annotation_position="top right",
+        # )
         st.plotly_chart(fig_dist, use_container_width=True)
 
 
@@ -309,9 +301,9 @@ with tab2:
         """
         Two complementary questions are answered here:
  
-        1. **Per-artist breakdown** — what is the theme profile of a single
+        1. **Per-artist breakdown**: what is the theme profile of a single
            artist, and where do their songs sit on the UMAP?
-        2. **Artist comparison** — how do artists differ from each other
+        2. **Artist comparison**: how do artists differ from each other
            *and* from the corpus average?
  
         **Note on normalisation:** theme proportions are computed as
@@ -523,10 +515,10 @@ with tab2:
         """
         Two complementary views:
  
-        **Stacked bar** — each artist's full theme profile side by side,
+        **Stacked bar**: each artist's full theme profile side by side,
         normalised so bars sum to 100%. This answers *what each artist writes about*.
  
-        **Divergence chart** — for a selected artist, how much does each theme
+        **Divergence chart**: for a selected artist, how much does each theme
         deviate from the corpus average? Bars pointing right mean the artist
         over-indexes on that theme relative to the typical artist in this corpus.
         Bars pointing left mean they under-index. This answers *what makes an
@@ -560,7 +552,7 @@ with tab2:
             compare_df = pd.concat(rows, ignore_index=True)
 
             # ── Stacked bar — sums to 100% ─────────────────────────────────
-            st.markdown("**Normalised theme mix — each bar sums to 100%**")
+            # st.markdown("**Normalised theme mix — each bar sums to 100%**")
             st.caption(
                 "Wider segments = larger share of that artist's theme assignments. "
                 "Artists with many small segments have diverse output; "
@@ -725,14 +717,14 @@ with tab3:
                 hide_index=True,
             )
 
-            st.download_button(
-                label=f"⬇️ Download as CSV",
-                data=display_songs.to_csv(index=False),
-                file_name=(
-                    f"songs_{selected_theme.replace('/', '_').replace(' ', '_')}.csv"
-                ),
-                mime="text/csv",
-            )
+            # st.download_button(
+            #     label=f"⬇️ Download as CSV",
+            #     data=display_songs.to_csv(index=False),
+            #     file_name=(
+            #         f"songs_{selected_theme.replace('/', '_').replace(' ', '_')}.csv"
+            #     ),
+            #     mime="text/csv",
+            # )
 
             st.markdown("---")
 

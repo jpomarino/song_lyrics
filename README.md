@@ -2,7 +2,7 @@
  
 An end-to-end NLP project that scrapes song lyrics, embeds them using a sentence transformer model, and serves an interactive Streamlit app for exploring lyrical similarity, themes, and recommendations across a curated corpus of artists.
  
-**Live app:** [https://jpomarino-song-lyrics-appmain-fjnwwp.streamlit.app/](https://jpomarino-song-lyrics-appmain-fjnwwp.streamlit.app/)
+**Live app:** [https://jpomarino-song-lyrics-appmain-fjnwwp.streamlit.app/](https://jpomarino-song-lyrics-appmain-fjnwwp.streamlit.app/) (takes some time to load).
  
 ## Motivation
  
@@ -59,8 +59,7 @@ song_lyrics/
 │       ├── 01_explore.py
 │       ├── 02_recommend.py
 │       ├── 03_themes.py
-│       ├── 04_similarity.py
-│       └── 05_scrape.py
+│       └── 04_similarity.py
 ├── .env                              # API keys (never committed)
 ├── requirements.txt
 └── README.md
@@ -174,21 +173,9 @@ python analysis/themes_llm.py --clusters --artists "Artist Name"
  
 ## Artists in the Corpus
  
-The corpus covers 20 artists primarily in the pop and indie pop space:
- 
-Charli XCX, Sabrina Carpenter, Audrey Hober, Renee Rapp, Holly Humberstone, Maisie Peters, Carly Rae Jepsen, Lorde, Addison Rae, Billie Eilish, Olivia Rodrigo, Maggie Rogers, Gracie Abrams, Tate McRae, Chappell Roan, Olivia Dean, Rachel Chinouriri, Ethel Cain, Kacey Musgraves, Ariana Grande.
+The corpus covers 30+ artists I love primarily in the pop and indie pop space.
  
 The corpus intentionally focuses on a single genre and demographic to make similarity and theme comparisons more meaningful. Adding artists from very different genres will shift the corpus baseline and may affect theme proportion comparisons.
- 
-## Key Design Decisions
- 
-**Why not use BERTopic for theme labeling?** BERTopic discovers topics bottom-up from statistical patterns in text. On a pop lyrics corpus, this produces labels dominated by filler words and vague emotional language ("ooh yeah want I"). Defining a fixed taxonomy and using an LLM to classify each song produces far more interpretable and actionable results.
- 
-**Why Ollama instead of the OpenAI API?** The entire classification workload runs once offline on your local machine, so there is no ongoing API cost and no risk of accidental charges from a large corpus. Llama 3.2 at 3B parameters is more than sufficient for a structured classification task with a well-defined taxonomy.
- 
-**Why cluster in 384-dimensional space rather than 2D UMAP?** UMAP is optimized for visual separation, not distance preservation. Clustering on the 2D projection can produce misleading results because UMAP folds and stretches the high-dimensional space in ways that exaggerate some distances and compress others. All similarity calculations use the full embedding space.
- 
-**Why cosine similarity rather than Euclidean distance?** All embeddings are L2-normalized before being saved, which means cosine similarity and dot product are equivalent. Cosine similarity is scale-invariant, which matters here because song length varies significantly and longer songs would otherwise produce higher-magnitude vectors.
  
 ## Limitations
  
